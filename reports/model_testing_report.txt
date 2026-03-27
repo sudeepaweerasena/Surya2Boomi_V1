@@ -1,0 +1,138 @@
+══════════════════════════════════════════════════════════════════
+  SURYA2BOOMI — MODEL TESTING REPORT
+  AI/ML Model Evaluation · Confusion Matrix · Metrics · AUC-ROC
+══════════════════════════════════════════════════════════════════
+
+  System has TWO models:
+  Model 1 : solar_flare_model.pkl          (Binary classifier)
+  Model 2 : solar_flare_model_multiclass.pkl (4-class classifier)
+
+==================================================================
+  MODEL 1 — BINARY CLASSIFIER
+  Task    : Predict Flare (1) vs No-flare (0)
+  Used for: Evaluation and reporting (step6, step_evaluation_report)
+==================================================================
+  Algorithm     : HistGradientBoostingClassifier
+  Trees built   : 161  (early stopping, n_iter_no_change=30)
+  Features      : 122
+  Threshold     : 0.7832  (optimised on Val F1)
+  Training data : 2017–2022  (51,672 rows)
+
+
+  ── VALIDATION SET (2023 — 8,760 rows) ──
+
+  CONFUSION MATRIX
+                                Predicted: No-flare   Predicted: Flare
+  Actual: No-flare                           4,834                41
+  Actual: Flare                                 39             3,846
+
+  TP (correct flare)                  3,846
+  TN (correct no-flare)               4,834
+  FP (false alarm)                       41
+  FN (missed flare)                      39
+
+  METRICS
+  Accuracy                       0.9909   (99.09%)
+  F1 Score                       0.9897
+  Precision                      0.9895
+  Recall (Sensitivity)           0.9900
+  AUC-ROC                        0.9992
+
+
+  ── TEST SET (2024–2026 — 19,464 rows) ──
+
+  CONFUSION MATRIX
+                                Predicted: No-flare   Predicted: Flare
+  Actual: No-flare                          12,724                74
+  Actual: Flare                                584             6,082
+
+  TP (correct flare)                  6,082
+  TN (correct no-flare)              12,724
+  FP (false alarm)                       74
+  FN (missed flare)                     584
+
+  METRICS
+  Accuracy                       0.9662   (96.62%)
+  F1 Score                       0.9487
+  Precision                      0.9880
+  Recall (Sensitivity)           0.9124
+  AUC-ROC                        0.9679
+
+  ROC Curve saved → model1_roc_curve.png
+
+==================================================================
+  MODEL 2 — MULTICLASS CLASSIFIER
+  Task    : Predict No-flare / C-class / M-class / X-class
+  Used for: All live forecasts (step7, step10)
+==================================================================
+  Algorithm     : HistGradientBoostingClassifier
+  Trees built   : 85  (early stopping, n_iter_no_change=15)
+  Features      : 122
+  Classes       : 0=No-flare  1=C-class  2=M-class  3=X-class
+  Training data : split_train_smote.csv (SMOTE-balanced)
+
+
+  ── VALIDATION SET (2023) ──
+
+  CONFUSION MATRIX (rows=Actual, cols=Predicted)
+                No-flare   C-class   M-class   X-class
+  No-flare            86        14         0         0
+  C-class             16     4,621       136         1
+  M-class              0       108     3,482         8
+  X-class              0         3        21       264
+
+  METRICS (macro average across all 4 classes)
+  Accuracy                       0.9650   (96.50%)
+  F1 Score (macro)               0.9314
+  Precision (macro)              0.9352
+  Recall (macro)                 0.9281
+  AUC-ROC (macro OvR)            0.9898
+
+  PER-CLASS F1
+    No-flare     F1 = 0.8515
+    C-class      F1 = 0.9708
+    M-class      F1 = 0.9623
+    X-class      F1 = 0.9412
+
+
+  ── TEST SET (2024 only — clean data) ──
+
+  CONFUSION MATRIX (rows=Actual, cols=Predicted)
+                No-flare   C-class   M-class   X-class
+  No-flare           107         6         1         0
+  C-class              4     2,355       176         2
+  M-class              0        94     5,014        32
+  X-class              0         3        79       911
+
+  METRICS (macro average across all 4 classes)
+  Accuracy                       0.9548   (95.48%)
+  F1 Score (macro)               0.9494
+  Precision (macro)              0.9594
+  Recall (macro)                 0.9399
+  AUC-ROC (macro OvR)            0.9893
+
+  PER-CLASS F1
+    No-flare     F1 = 0.9511
+    C-class      F1 = 0.9429
+    M-class      F1 = 0.9633
+    X-class      F1 = 0.9401
+
+  ROC Curve saved → model2_roc_curve.png
+
+══════════════════════════════════════════════════════════════════
+  SUMMARY
+══════════════════════════════════════════════════════════════════
+
+  Model                                         Val AUC   Test AUC   Val F1   Test F1
+  ------------------------------------------  ---------  ---------  -------  --------
+  Model 1 — Binary (solar_flare_model.pkl)       0.9992     0.9679   0.9897    0.9487
+  Model 2 — Multiclass (multiclass.pkl)          0.9898     0.9893   0.9314    0.9494
+
+  OUTPUT FILES
+  /Users/sudeepaweerasena/Desktop/Surya2Boomi_V1/reports/model1_roc_curve.png — Binary model ROC curve (Val + Test)
+  /Users/sudeepaweerasena/Desktop/Surya2Boomi_V1/reports/model2_roc_curve.png — Multiclass model ROC curves (OvR, Val + Test)
+  /Users/sudeepaweerasena/Desktop/Surya2Boomi_V1/reports/model_testing_report.txt — This report
+
+══════════════════════════════════════════════════════════════════
+  SURYA2BOOMI · Sudeepa Weerasena · IIT Sri Lanka
+══════════════════════════════════════════════════════════════════

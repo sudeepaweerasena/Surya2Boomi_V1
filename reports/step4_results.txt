@@ -1,0 +1,56 @@
+Solar Flare Forecasting — Step 4 Results
+============================================================
+Algorithm    : HistGradientBoostingClassifier
+Trees built  : 161
+Train time   : 2.6s
+Features     : 122
+Threshold    : 0.7832 (optimised on val F1)
+
+── Validation ──
+  F1            : 0.9897066392177046
+  AUC-PR        : 0.9993034340689547
+  AUC-ROC       : 0.999218876018876
+  TSS           : 0.9815511335511335
+  HSS           : 0.9814998285407911
+  sensitivity   : 0.9899613899613899
+  specificity   : 0.9915897435897436
+  TP            : 3846
+  FP            : 41
+  TN            : 4834
+  FN            : 39
+
+── Test ──
+  F1            : 0.9486819528934644
+  AUC-PR        : 0.9681868221923928
+  AUC-ROC       : 0.9678798693277672
+  TSS           : 0.906609085662434
+  HSS           : 0.9235364345297252
+  sensitivity   : 0.9123912391239124
+  specificity   : 0.9942178465385216
+  TP            : 6082
+  FP            : 74
+  TN            : 12724
+  FN            : 584
+
+Top 20 Features:
+                     feature  importance  rank
+           goes_ordinal_lag1    0.286517     1
+            cumulative_index    0.012602     2
+     cumulative_index_delta1    0.005069     3
+              goes_flux_lag1    0.000108     4
+  cumulative_index_roll6_std    0.000029     5
+        xray_flux_short_lag3    0.000028     6
+      xray_flux_short_delta1    0.000013     7
+        goes_flux_roll24_std    0.000009     8
+     xray_flux_short_delta24    0.000008     9
+ xray_flux_short_roll12_mean    0.000007    10
+   magnetic_field_roll24_std    0.000007    11
+        magnetic_field_lag12    0.000007    12
+      xray_flux_short_delta6    0.000006    13
+    log_xray_flux_roll24_std    0.000006    14
+   sunspot_number_roll24_std    0.000005    15
+cumulative_index_roll12_mean    0.000004    16
+        log_xray_flux_delta1    0.000004    17
+ cumulative_index_roll24_std    0.000003    18
+        xray_flux_short_lag1    0.000003    19
+   magnetic_field_roll6_mean    0.000003    20

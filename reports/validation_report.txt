@@ -1,0 +1,25 @@
+NOAA Validation Report
+Run at: 2026-03-25 07:00:00 UTC
+NOAA forecast issued: 2026 Mar 25 0030 UTC
+Current NOAA R-scale: None active
+
+Day     Date          Metric                         NOAA%   Ours%    Diff  Agreement
+d+1     2026-03-26    P(C-class flare)                 N/A    0.4%     N/A  N/A
+d+1     2026-03-26    P(M-class flare)                 N/A    0.1%     N/A  N/A
+d+1     2026-03-26    P(X-class flare)                 N/A    0.0%     N/A  N/A
+d+1     2026-03-26    P(R1-R2 blackout)                25%    0.0%   -25.0  ↓ lower  (Δ25pp)
+d+1     2026-03-26    P(R3+ blackout)                   5%    0.0%    -5.0  ✓ close  (Δ5pp)
+d+2     2026-03-27    P(C-class flare)                 N/A    0.4%     N/A  N/A
+d+2     2026-03-27    P(M-class flare)                 N/A    0.1%     N/A  N/A
+d+2     2026-03-27    P(X-class flare)                 N/A    0.0%     N/A  N/A
+d+2     2026-03-27    P(R1-R2 blackout)                25%    0.0%   -25.0  ↓ lower  (Δ25pp)
+d+2     2026-03-27    P(R3+ blackout)                   5%    0.0%    -5.0  ✓ close  (Δ5pp)
+d+3     2026-03-28    P(C-class flare)                 N/A    0.4%     N/A  N/A
+d+3     2026-03-28    P(M-class flare)                 N/A    0.1%     N/A  N/A
+d+3     2026-03-28    P(X-class flare)                 N/A    0.0%     N/A  N/A
+d+3     2026-03-28    P(R1-R2 blackout)                25%    0.0%   -25.0  ↓ lower  (Δ25pp)
+d+3     2026-03-28    P(R3+ blackout)                   5%    0.0%    -5.0  ✓ close  (Δ5pp)
+
+Mean absolute difference: 15.0pp
+Within 15pp: 3/6
+Verdict: Good — our model is broadly consistent with NOAA

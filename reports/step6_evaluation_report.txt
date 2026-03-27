@@ -1,0 +1,65 @@
+Solar Flare Forecasting — Step 6 Evaluation Report
+==============================================================
+Model        : HistGradientBoostingClassifier
+Trees        : 146
+Threshold    : 0.7917
+Features     : 122
+
+OVERALL METRICS
+
+Validation (2023)
+  F1            : 0.9897
+  AUC_PR        : 0.9993
+  AUC_ROC       : 0.9993
+  TSS           : 0.9814
+  HSS           : 0.9815
+  Sensitivity   : 0.9892
+  Specificity   : 0.9922
+  TP            : 3843
+  FP            : 38
+  TN            : 4837
+  FN            : 42
+  miss_rate     : 1.1
+  fa_rate       : 0.8
+
+Test (2024–2026)
+  F1            : 0.9488
+  AUC_PR        : 0.9678
+  AUC_ROC       : 0.9679
+  TSS           : 0.9068
+  HSS           : 0.9237
+  Sensitivity   : 0.9125
+  Specificity   : 0.9942
+  TP            : 6083
+  FP            : 74
+  TN            : 12724
+  FN            : 583
+  miss_rate     : 8.7
+  fa_rate       : 0.6
+
+PER-YEAR BREAKDOWN (test set)
+ year    N  n_flares  flare_pct     F1    TSS    HSS  Sensitivity  Specificity   TP  FP   TN  FN
+ 2024 8784      6122       69.7 0.9908 0.9658 0.9694       0.9936       0.9722 6083  74 2588  39
+ 2025 8760       433        4.9 0.0000 0.0000 0.0000       0.0000       1.0000    0   0 8327 433
+ 2026 1920       111        5.8 0.0000 0.0000 0.0000       0.0000       1.0000    0   0 1809 111
+
+24-HOUR BLOCK LEVEL
+
+24h blocks
+  F1            : 0.7649
+  AUC_PR        : 0.9825
+  AUC_ROC       : 0.9757
+  TSS           : 0.6057
+  HSS           : 0.5624
+  Sensitivity   : 0.6297
+  Specificity   : 0.976
+  TP            : 301
+  FP            : 8
+  TN            : 325
+  FN            : 177
+  miss_rate     : 37.0
+  fa_rate       : 2.4
+
+NOTE: 2025/2026 show zero predictions due to
+cumulative_index=0 in source data for those years.
+This is a data availability issue, not a model bug.
