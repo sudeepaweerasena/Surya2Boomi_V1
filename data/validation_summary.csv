@@ -1,0 +1,16 @@
+day,date,metric,noaa_pct,our_pct,diff_pp,agreement
+d+1,2026-03-26,P(C-class flare),,0.4,,N/A
+d+1,2026-03-26,P(M-class flare),,0.1,,N/A
+d+1,2026-03-26,P(X-class flare),,0.0,,N/A
+d+1,2026-03-26,P(R1-R2 blackout),25.0,0.0,-25.0,↓ lower  (Δ25pp)
+d+1,2026-03-26,P(R3+ blackout),5.0,0.0,-5.0,✓ close  (Δ5pp)
+d+2,2026-03-27,P(C-class flare),,0.4,,N/A
+d+2,2026-03-27,P(M-class flare),,0.1,,N/A
+d+2,2026-03-27,P(X-class flare),,0.0,,N/A
+d+2,2026-03-27,P(R1-R2 blackout),25.0,0.0,-25.0,↓ lower  (Δ25pp)
+d+2,2026-03-27,P(R3+ blackout),5.0,0.0,-5.0,✓ close  (Δ5pp)
+d+3,2026-03-28,P(C-class flare),,0.4,,N/A
+d+3,2026-03-28,P(M-class flare),,0.1,,N/A
+d+3,2026-03-28,P(X-class flare),,0.0,,N/A
+d+3,2026-03-28,P(R1-R2 blackout),25.0,0.0,-25.0,↓ lower  (Δ25pp)
+d+3,2026-03-28,P(R3+ blackout),5.0,0.0,-5.0,✓ close  (Δ5pp)
