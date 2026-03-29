@@ -18,14 +18,13 @@ Usage
   python step10_7day_forecast.py --fallback  # force historical
 """
 
-import pickle, argparse, sys, os
-import numpy as np
-import pandas as pd
-
-# Add parent directory to path to import config
+import pickle, argparse, os, sys
+# Add root to sys.path for standalone runs
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
 
+import numpy as np
+import pandas as pd
 from forecasting.live_data import get_live_snapshot, _fallback_snapshot
 
 FORECAST_HOURS    = 168
@@ -38,20 +37,90 @@ CONFIDENCE        = {1:"High",2:"High",3:"High",4:"Medium",5:"Medium",6:"Low",7:
 
 
 def rollout(model, feat_cols, x0, now):
-    idx_ord  = feat_cols.index("goes_ordinal_lag1")
-    idx_flux = feat_cols.index("goes_flux_lag1")
-    idx_log  = feat_cols.index("log_goes_flux_lag1")
+    def get_idx(name):
+        try: return feat_cols.index(name)
+        except ValueError: return -1
+
+    # Initialize a 25-hour history buffer by interpolating the known lags from x0
+    # This serves as the rolling window to simulate all 50+ derived features dynamically.
+    hist_flux = np.zeros(25)
+    f24, f12, f6, f3, f1 = [x0[get_idx(f"xray_flux_short_lag{L}")] if get_idx(f"xray_flux_short_lag{L}") != -1 else 1e-8 for L in [24,12,6,3,1]]
+    hist_flux[0] = f24
+    for i in range(1, 13): hist_flux[i] = f24 + (f12-f24)*(i/12.0)
+    for i in range(13, 19): hist_flux[i] = f12 + (f6-f12)*((i-12)/6.0)
+    for i in range(19, 22): hist_flux[i] = f6 + (f3-f6)*((i-18)/3.0)
+    for i in range(22, 24): hist_flux[i] = f3 + (f1-f3)*((i-21)/2.0)
+    hist_flux[24] = f1
+    hist_flux = list(hist_flux)
+
+    def flux_to_ord(f):
+        if f >= 1e-4: return 5.0
+        if f >= 1e-5: return 4.0
+        if f >= 1e-6: return 3.0
+        if f >= 1e-7: return 2.0
+        return 1.0
+
     x_cur, rows = x0.copy(), []
+    import math
+
     for h in range(1, FORECAST_HOURS+1):
         ts    = now + pd.Timedelta(hours=h)
         proba = model.predict_proba(x_cur.reshape(1,-1))[0]
         pred  = int(np.argmax(proba))
+        
         rows.append({"timestamp":ts, "date":ts.date(), "pred_class":pred,
                      "p_noflare":float(proba[0]),"p_c":float(proba[1]),
                      "p_m":float(proba[2]),"p_x":float(proba[3])})
-        x_cur[idx_ord]  = CLASS4_TO_ORDINAL[pred]
-        x_cur[idx_flux] = CLASS4_TO_FLUX[pred]
-        x_cur[idx_log]  = np.log10(max(CLASS4_TO_FLUX[pred], 1e-10))
+
+        # Expected instantaneous flux
+        raw_exp = proba[0]*1e-8 + proba[1]*1e-6 + proba[2]*1e-5 + proba[3]*1e-4
+        
+        # Decay aggressively to simulate the short-lived transient nature of solar flares
+        # This breaks the autoregressive equilibrium loop where a continuous high average is assumed
+        baseline = 1e-8
+        exp_flux = baseline + (raw_exp - baseline) * 0.15 + (hist_flux[-1] - baseline) * 0.15
+        hist_flux.append(exp_flux)
+        
+        hf_arr = np.array(hist_flux)
+        
+        # Dynamically update the 50+ derived rolling and delta features that the model relies on
+        def update_lag_roll_delta(base_name, arr):
+            if get_idx(f"{base_name}_lag1") != -1: x_cur[get_idx(f"{base_name}_lag1")] = arr[-2]
+            if get_idx(f"{base_name}_lag3") != -1: x_cur[get_idx(f"{base_name}_lag3")] = arr[-4]
+            if get_idx(f"{base_name}_lag6") != -1: x_cur[get_idx(f"{base_name}_lag6")] = arr[-7]
+            if get_idx(f"{base_name}_lag12") != -1: x_cur[get_idx(f"{base_name}_lag12")] = arr[-13]
+            if get_idx(f"{base_name}_lag24") != -1: x_cur[get_idx(f"{base_name}_lag24")] = arr[-25]
+            
+            for w in [6, 12, 24]:
+                w_arr = arr[-w-1:-1]
+                if len(w_arr) > 0:
+                    if get_idx(f"{base_name}_roll{w}_mean") != -1: x_cur[get_idx(f"{base_name}_roll{w}_mean")] = np.mean(w_arr)
+                    if get_idx(f"{base_name}_roll{w}_max") != -1: x_cur[get_idx(f"{base_name}_roll{w}_max")] = np.max(w_arr)
+                    if get_idx(f"{base_name}_roll{w}_std") != -1: x_cur[get_idx(f"{base_name}_roll{w}_std")] = np.std(w_arr)
+                
+            if len(arr) >= 26:
+                if get_idx(f"{base_name}_delta1") != -1: x_cur[get_idx(f"{base_name}_delta1")] = arr[-2] - arr[-3]
+                if get_idx(f"{base_name}_delta6") != -1: x_cur[get_idx(f"{base_name}_delta6")] = arr[-2] - arr[-8]
+                if get_idx(f"{base_name}_delta24") != -1: x_cur[get_idx(f"{base_name}_delta24")] = arr[-2] - arr[-26]
+
+        update_lag_roll_delta("xray_flux_short", hf_arr)
+        update_lag_roll_delta("goes_flux", np.clip(hf_arr, 1e-9, None))
+        update_lag_roll_delta("log_xray_flux", np.log10(np.clip(hf_arr, 1e-9, None)))
+        update_lag_roll_delta("log_goes_flux", np.log10(np.clip(hf_arr, 1e-9, None)))
+        
+        ord_arr = np.array([flux_to_ord(f) for f in hf_arr])
+        update_lag_roll_delta("goes_ordinal", ord_arr)
+        
+        cum_arr = [np.sum(hf_arr[max(0, i-23):i+1]) for i in range(len(hf_arr))]
+        update_lag_roll_delta("cumulative_index", cum_arr)
+
+        idx_hsin, idx_hcos = get_idx("hour_sin"), get_idx("hour_cos")
+        idx_dsin, idx_dcos = get_idx("doy_sin"), get_idx("doy_cos")
+        if idx_hsin != -1: x_cur[idx_hsin] = math.sin(2*math.pi*ts.hour/24)
+        if idx_hcos != -1: x_cur[idx_hcos] = math.cos(2*math.pi*ts.hour/24)
+        if idx_dsin != -1: x_cur[idx_dsin] = math.sin(2*math.pi*ts.day_of_year/365.25)
+        if idx_dcos != -1: x_cur[idx_dcos] = math.cos(2*math.pi*ts.day_of_year/365.25)
+        
     return pd.DataFrame(rows)
 
 

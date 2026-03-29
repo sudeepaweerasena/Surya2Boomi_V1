@@ -324,16 +324,15 @@ body{background:linear-gradient(135deg,#0a0e27 0%,#1a1f3a 50%,#0a0e27 100%);min-
   <h2>📡 Terms, Disclaimers & System Information</h2>
   <div class="m-tab-bar">
     <button class="m-tab active" onclick="mTab(this,'mAbout')">About</button>
-    <button class="m-tab" onclick="mTab(this,'mHow')">How It Works</button>
     <button class="m-tab" onclick="mTab(this,'mData')">Data & Accuracy</button>
     <button class="m-tab" onclick="mTab(this,'mLegal')">Legal</button>
   </div>
   <div class="m-section active" id="mAbout">
     <h3>🌟 About This System</h3>
-    <p><strong>SURYA2BOOMI</strong> (Sun-to-Earth) is an AI-powered solar flare and HF radio blackout forecasting system built on real-time NOAA GOES satellite data.</p>
-    <p>It predicts solar flare class (No-flare / C / M / X) for the next 72 hours and 7 days, and derives HF radio blackout probabilities (R1–R3) from those predictions.</p>
+    <p><strong>SURYA2BOOMI</strong> (Sun-to-Earth) is a solar flare and HF radio blackout forecasting system built on real-time NOAA GOES satellite data.</p>
+    <p>It predicts solar flare class (No-flare / C / M / X) for the next 72 hours and 7 days, and derives HF radio blackout probabilities (R1–R5) from those predictions.</p>
     <h3>👨‍💻 Developer</h3>
-    <p>Project: Surya2Boomi v2.0<br>Developer: Sudeepa Weerasena<br>Institution: IIT Sri Lanka<br>Contact: sudeepa.20221986@iit.ac.lk<br>Purpose: Educational and Research</p>
+    <p>Project: Surya2Boomi v1.0<br>Developer: Sudeepa Weerasena<br>Institution: IIT Sri Lanka<br>Contact: sudeepa.20221986@iit.ac.lk<br>Purpose: Educational and Research</p>
     <h3>🛰 Data Sources</h3>
     <ul>
       <li>NOAA GOES X-ray flux — real-time 1-minute averages (0.05–0.4nm)</li>
@@ -420,7 +419,7 @@ body{background:linear-gradient(135deg,#0a0e27 0%,#1a1f3a 50%,#0a0e27 100%);min-
 <!-- SIDEBAR -->
 <div class="sidebar">
   <div class="sb-logo">SURYA2BOOMI</div>
-  <div class="sb-sub">Solar Flare Forecast v2.0</div>
+  <div class="sb-sub">Solar Flare Forecast v1.0</div>
 
   <div class="sb-sec">System Status</div>
   <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.3rem;">
@@ -458,7 +457,7 @@ body{background:linear-gradient(135deg,#0a0e27 0%,#1a1f3a 50%,#0a0e27 100%);min-
     <button class="sb-btn sb-btn-sm" style="background:rgba(0,217,255,0.1); border:1px solid rgba(0,217,255,0.3); color:#00d9ff;" onclick="triggerRefresh()">🔄 Refresh Data</button>
   </div>
 
-  <div class="sb-footer">Model: HistGradBoost · 86 trees<br>122 features · GOES 2017-2026<br>© 2026 Sudeepa Weerasena · IIT</div>
+  <div class="sb-footer">Model: HistGradBoost · <br>122 features · GOES 2017-2026<br>© 2026 Sudeepa Weerasena · IIT</div>
 </div>
 
 <!-- MAIN -->
@@ -697,7 +696,7 @@ body{background:linear-gradient(135deg,#0a0e27 0%,#1a1f3a 50%,#0a0e27 100%);min-
   <div style="height:1px;background:rgba(0,217,255,0.1);margin:2rem 0 0.8rem;"></div>
   <div style="display:flex;justify-content:space-between;align-items:center;font-family:'Share Tech Mono',monospace;font-size:0.58rem;color:#4a5568;">
     <span>SURYA2BOOMI — SOLAR FLARE & HF BLACKOUT FORECAST SYSTEM</span>
-    <span>Model: HistGradBoost · 86 trees · 122 features · GOES NOAA 2017-2026</span>
+    <span>Model: HistGradBoost · 122 features · GOES NOAA 2017-2026</span>
     <span>© 2026 Sudeepa Weerasena · IIT Sri Lanka · Educational Use Only</span>
   </div>
 
