@@ -1,25 +1,3 @@
-"""
-live_data.py — Real-time NOAA data fetcher & feature engineer
-=============================================================
-Fetches live solar data from NOAA SWPC and engineers the exact
-122-feature snapshot that the trained model expects.
-
-Correct endpoints (verified from directory listing):
-  xrays-7-day.json         → xray_flux_short (0.05-0.4nm), xray_flux_long
-  magnetometers-7-day.json → Hp magnetic field component
-  sunspot_report.json      → observed daily sunspot number
-
-Feature engineering exactly mirrors step1_feature_engineering.py:
-  lags (1,3,6,12,24h), rolling (6/12/24h mean/max/std),
-  deltas (1,6,24h), log transforms, time encodings.
-
-Falls back to last row of solar_flare_features.csv if any fetch fails.
-
-Usage:
-    from live_data import get_live_snapshot
-    x0, now, source = get_live_snapshot(feat_cols)
-"""
-
 import json, math, warnings, sys, os
 import numpy as np
 import pandas as pd
@@ -33,9 +11,6 @@ import config
 
 warnings.filterwarnings("ignore")
 
-# ─────────────────────────────────────────────
-# CORRECT NOAA URLS  (verified 2026-03-25)
-# ─────────────────────────────────────────────
 BASE             = "https://services.swpc.noaa.gov"
 URL_XRAY         = f"{BASE}/json/goes/primary/xrays-7-day.json"
 URL_MAG          = f"{BASE}/json/goes/primary/magnetometers-7-day.json"
@@ -47,20 +22,12 @@ LEAKY_FEATURES   = ["goes_flux", "goes_ordinal", "log_goes_flux"]
 CYCLE25_START    = pd.Timestamp("2019-12-01")
 
 
-# ─────────────────────────────────────────────
-# FETCH
-# ─────────────────────────────────────────────
 def _fetch(url):
     req = Request(url, headers={"User-Agent": "SuryaBoomi-Solar-Forecast/1.0"})
     with urlopen(req, timeout=TIMEOUT) as r:
         return json.loads(r.read().decode("utf-8"))
 
 
-# ─────────────────────────────────────────────
-# 1. X-RAY FLUX  (xrays-7-day.json)
-# Keys: time_tag, satellite, flux, energy
-# energy values: "0.05-0.4nm" = short,  "0.1-0.8nm" = long
-# ─────────────────────────────────────────────
 def fetch_xray(verbose=True):
     data = _fetch(URL_XRAY)
     rows = []
@@ -102,11 +69,6 @@ def fetch_xray(verbose=True):
     return merged
 
 
-# ─────────────────────────────────────────────
-# 2. MAGNETOMETER  (magnetometers-7-day.json)
-# Keys: time_tag, satellite, Hp, He, Hn, total_field
-# Hp = field-parallel component (nT) — use as magnetic_field
-# ─────────────────────────────────────────────
 def fetch_magnetometer(verbose=True):
     data = _fetch(URL_MAG)
     rows = []
@@ -137,11 +99,6 @@ def fetch_magnetometer(verbose=True):
     return df
 
 
-# ─────────────────────────────────────────────
-# 3. SUNSPOT NUMBER  (sunspot_report.json)
-# Keys: time_tag, ssn  (or similar — check first row)
-# Returns the most recent daily SSN as an integer.
-# ─────────────────────────────────────────────
 def fetch_sunspot(verbose=True):
     try:
         data = _fetch(URL_SUNSPOT)
@@ -197,9 +154,6 @@ def _time_features(ts):
     }
 
 
-# ─────────────────────────────────────────────
-# BUILD FEATURE WINDOW
-# ─────────────────────────────────────────────
 def build_feature_window(xray_df, mag_df, ssn, verbose=True):
     df = xray_df.copy().sort_values("timestamp").reset_index(drop=True)
 
@@ -209,9 +163,10 @@ def build_feature_window(xray_df, mag_df, ssn, verbose=True):
     else:
         df["magnetic_field"] = np.nan
 
+    # FIX: replaced deprecated fillna(method=...) with .ffill()/.bfill()
     df["magnetic_field"] = (df["magnetic_field"]
-                            .fillna(method="ffill")
-                            .fillna(method="bfill")
+                            .ffill()
+                            .bfill()
                             .fillna(10.0))
 
     df["sunspot_number"]  = float(ssn)
@@ -248,7 +203,8 @@ def build_feature_window(xray_df, mag_df, ssn, verbose=True):
                 "log_goes_flux","log_xray_flux"]
     for col in lag_cols:
         for lag in [1, 3, 6, 12, 24]:
-            df[f"{col}_lag{lag}"] = df[col].shift(lag).fillna(method="bfill")
+            # FIX: replaced deprecated .fillna(method="bfill") with .bfill()
+            df[f"{col}_lag{lag}"] = df[col].shift(lag).bfill()
 
     # Deltas
     delta_cols = ["magnetic_field","sunspot_number","xray_flux_short",
@@ -271,9 +227,6 @@ def build_feature_window(xray_df, mag_df, ssn, verbose=True):
     return df
 
 
-# ─────────────────────────────────────────────
-# FALLBACK
-# ─────────────────────────────────────────────
 def _fallback_snapshot(feat_cols, verbose=True):
     if verbose:
         print(f"  [fallback] Loading last row from {FALLBACK_CSV} ...")
@@ -284,9 +237,6 @@ def _fallback_snapshot(feat_cols, verbose=True):
     return x0, now, "fallback"
 
 
-# ─────────────────────────────────────────────
-# PUBLIC API
-# ─────────────────────────────────────────────
 def get_live_snapshot(feat_cols, verbose=True):
     """
     Fetch live NOAA data and return feature vector for current hour.
@@ -337,9 +287,6 @@ def get_live_snapshot(feat_cols, verbose=True):
         return _fallback_snapshot(feat_cols, verbose)
 
 
-# ─────────────────────────────────────────────
-# CLI TEST
-# ─────────────────────────────────────────────
 if __name__ == "__main__":
     import pickle
     with open(config.get_model_path("solar_flare_model_multiclass.pkl"),"rb") as f:

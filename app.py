@@ -1,9 +1,18 @@
 import streamlit as st
 import pandas as pd
 import json
+import time
 from datetime import datetime
 
 from pipeline import run_full_pipeline
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CACHE CONFIGURATION
+# FIX: session_state alone never expires on Streamlit Cloud — the server
+#      process stays alive indefinitely. We store a timestamp alongside the
+#      data and force a fresh pipeline run when TTL_SECONDS have elapsed.
+# ─────────────────────────────────────────────────────────────────────────────
+CACHE_TTL_SECONDS = 3600  # refresh live NOAA data every 1 hour
 
 # Set page config
 st.set_page_config(
@@ -39,9 +48,18 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 def load_data():
-    """Load and format data from in-memory pipeline (cached in session_state)."""
+    """Load and format data from in-memory pipeline (cached in session_state with TTL)."""
     try:
-        if 'pipeline_data' not in st.session_state:
+        now_ts = time.time()
+
+        # FIX: expire the cache when TTL has passed, or if it was never set
+        cache_expired = (
+            'pipeline_data' not in st.session_state
+            or 'pipeline_fetched_at' not in st.session_state
+            or (now_ts - st.session_state.pipeline_fetched_at) > CACHE_TTL_SECONDS
+        )
+
+        if cache_expired:
             # Show loading screen while pipeline runs
             loading = st.empty()
             loading.markdown("""
@@ -70,8 +88,12 @@ def load_data():
                 <style>@keyframes loading{0%{background-position:200% 0}100%{background-position:-200% 0}}</style>
             </div>
             """, unsafe_allow_html=True)
+
+            # Run fresh pipeline and stamp the fetch time
             st.session_state.pipeline_data = run_full_pipeline(verbose=True)
+            st.session_state.pipeline_fetched_at = now_ts  # FIX: record when data was fetched
             loading.empty()
+
         data = st.session_state.pipeline_data
         fh_df = data["fh"]
         fd_df = data["fd"]
@@ -688,7 +710,7 @@ body{background:linear-gradient(135deg,#0a0e27 0%,#1a1f3a 50%,#0a0e27 100%);min-
       <span style="color:#ffd700;">step8</span>  →  72h blackout probabilities (in-memory)<br>
       <span style="color:#4ade80;">step10</span> →  7-day flare forecast (in-memory)<br>
       <span style="color:#ffd700;">step11</span> →  7-day blackout probabilities (in-memory)<br>
-      <span style="color:#8b9dc3;">app_new.py</span> →  pipeline.run_full_pipeline()  →  this dashboard
+      <span style="color:#8b9dc3;">app.py</span> →  pipeline.run_full_pipeline()  →  this dashboard
     </div>
   </div>
 
@@ -704,7 +726,7 @@ body{background:linear-gradient(135deg,#0a0e27 0%,#1a1f3a 50%,#0a0e27 100%);min-
 </div><!-- /layout -->
 
 <script>
-const D={fh_hours:[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72],fh_pm:[0.49,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04],fh_px:[0.23,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02],fh_pc:[13.83,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2],bh_r1:[0.25,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03],bh_r2:[0.02,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],bh_r3:[0.02,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],fh_ts:["03-22 00:00","03-22 01:00","03-22 02:00","03-22 03:00","03-22 04:00","03-22 05:00","03-22 06:00","03-22 07:00","03-22 08:00","03-22 09:00","03-22 10:00","03-22 11:00","03-22 12:00","03-22 13:00","03-22 14:00","03-22 15:00","03-22 16:00","03-22 17:00","03-22 18:00","03-22 19:00","03-22 20:00","03-22 21:00","03-22 22:00","03-22 23:00","03-23 00:00","03-23 01:00","03-23 02:00","03-23 03:00","03-23 04:00","03-23 05:00","03-23 06:00","03-23 07:00","03-23 08:00","03-23 09:00","03-23 10:00","03-23 11:00","03-23 12:00","03-23 13:00","03-23 14:00","03-23 15:00","03-23 16:00","03-23 17:00","03-23 18:00","03-23 19:00","03-23 20:00","03-23 21:00","03-23 22:00","03-23 23:00","03-24 00:00","03-24 01:00","03-24 02:00","03-24 03:00","03-24 04:00","03-24 05:00","03-24 06:00","03-24 07:00","03-24 08:00","03-24 09:00","03-24 10:00","03-24 11:00","03-24 12:00","03-24 13:00","03-24 14:00","03-24 15:00","03-24 16:00","03-24 17:00","03-24 18:00","03-24 19:00","03-24 20:00","03-24 21:00","03-24 22:00","03-24 23:00"],f7:[{date:"2026-03-26",day_offset:"d+1",peak_name:"No-flare",peak_prob:99.7,max_p_c:0.2,max_p_m:0.0,max_p_x:0.0,confidence:"High"},{date:"2026-03-27",day_offset:"d+2",peak_name:"No-flare",peak_prob:99.7,max_p_c:0.2,max_p_m:0.0,max_p_x:0.0,confidence:"High"},{date:"2026-03-28",day_offset:"d+3",peak_name:"No-flare",peak_prob:99.7,max_p_c:0.2,max_p_m:0.0,max_p_x:0.0,confidence:"High"},{date:"2026-03-29",day_offset:"d+4",peak_name:"No-flare",peak_prob:99.7,max_p_c:0.2,max_p_m:0.0,max_p_x:0.0,confidence:"Medium"},{date:"2026-03-30",day_offset:"d+5",peak_name:"No-flare",peak_prob:99.7,max_p_c:0.2,max_p_m:0.0,max_p_x:0.0,confidence:"Medium"},{date:"2026-03-31",day_offset:"d+6",peak_name:"No-flare",peak_prob:99.7,max_p_c:0.2,max_p_m:0.0,max_p_x:0.0,confidence:"Low"},{date:"2026-04-01",day_offset:"d+7",peak_name:"No-flare",peak_prob:99.7,max_p_c:0.2,max_p_m:0.0,max_p_x:0.0,confidence:"Low"}],b7:[{date:"2026-03-26",day_offset:"d+1",dominant_flare:"No-flare",max_p_R1:0.0217,max_p_R2:0.0002,max_p_R3:0.0,confidence:"High"},{date:"2026-03-27",day_offset:"d+2",dominant_flare:"No-flare",max_p_R1:0.0217,max_p_R2:0.0002,max_p_R3:0.0,confidence:"High"},{date:"2026-03-28",day_offset:"d+3",dominant_flare:"No-flare",max_p_R1:0.0217,max_p_R2:0.0002,max_p_R3:0.0,confidence:"High"},{date:"2026-03-29",day_offset:"d+4",dominant_flare:"No-flare",max_p_R1:0.0217,max_p_R2:0.0002,max_p_R3:0.0,confidence:"Medium"},{date:"2026-03-30",day_offset:"d+5",dominant_flare:"No-flare",max_p_R1:0.0217,max_p_R2:0.0002,max_p_R3:0.0,confidence:"Medium"},{date:"2026-03-31",day_offset:"d+6",dominant_flare:"No-flare",max_p_R1:0.0217,max_p_R2:0.0002,max_p_R3:0.0,confidence:"Low"},{date:"2026-04-01",day_offset:"d+7",dominant_flare:"No-flare",max_p_R1:0.0217,max_p_R2:0.0002,max_p_R3:0.0,confidence:"Low"}]};
+const D={};
 
 // Clock
 function tick(){const n=new Date();const pad=x=>String(x).padStart(2,'0');
@@ -724,7 +746,7 @@ function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
 
-// Refresh: reload parent Streamlit page to force new session & fresh pipeline
+// Refresh: clears session_state TTL flag then reloads so Python re-fetches fresh data
 function triggerRefresh(){
   try { window.parent.location.reload(); } catch(e1) {
     try { window.top.location.reload(); } catch(e2) {
